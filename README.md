@@ -51,19 +51,21 @@ The route option is interesting. You can add some simple parameter interpolation
 
 Just as you would expect from working with Backbone's controllers or other frameworks, this matches routes like `#/hat/pointed`. Faux routing differs from Backbone's routing when parameters are involved. In Backbone, the route `#/hat/pointed` is equivalent to invoking `magic_controller.headgear("pointed")`. In Faux, the route `#/hat/pointed` is equivalent to invoking `magic_controller.headgear({ type: "pointed" })`. Faux prefers named to positional parameters at all times.
 
-Parameters can be used in your Haml templates, of course, so you can things like:
+Parameters can be used in your Haml templates, of course, so you can add things like this to your Haml templates:
 
     %h2= type
     
-In your `headgear.haml` template, and you can probably deduce what the following does to the displayed page:
+And you can probably deduce what the following does to the displayed page:
 
     magic_controller
       display('vestaments', {
         route: '/vestaments/:colour',
         title: function (params) { return "Splendid " + params.colour + " Robes!"; }
       });
+      
+...more to come...
 
-*Faux and its documentation is still a work in progress. There's much more to come. Faux was conceived on August 19, 2010*
+*Faux and its documentation is still a work in progress. Faux was conceived on August 19, 2010 as "Roweis." A remark by Jeremy Ashkenas that we were creating a "Faux Server API" led to its new name.*
 
 [s]: http://github.com/quirkey/sammy "sammy_js"
 [sinatra]: http://www.sinatrarb.com/
