@@ -33,23 +33,37 @@ Our favourite letter of the alphabet is [K][k], so you also can write things lik
 
     magic_controller
       .display('spellbook')
-      .display('robe')
-      .display('hat');
+      .display('robe');
 
 You can take control over the finer details by overriding Faux's defaults using a hash of options. Here are some examples:
 
     magic_controller
       .display('spellbook', {
         route: '/spells'
-      })
-      .display('robe', {
-        partial: 'vestaments/robe'
-      })
-      .display('hat', {
-        title: 'pointy headgear'
       });
 
-*Faux was conceived on August 19, 2010*
+The route option is interesting. You can add some simple parameter interpolation:
+
+    magic_controller
+      display('headgear', {
+        route: '/hat/:type'
+      });
+
+Just as you would expect from working with Backbone's controllers or other frameworks, this matches routes like `#/hat/pointed`. Faux routing differs from Backbone's routing when parameters are involved. In Backbone, the route `#/hat/pointed` is equivalent to invoking `magic_controller.headgear("pointed")`. In Faux, the route `#/hat/pointed` is equivalent to invoking `magic_controller.headgear({ type: "pointed" })`. Faux prefers named to positional parameters at all times.
+
+Parameters can be used in your Haml templates, of course, so you can things like:
+
+    %h2= type
+    
+In your `headgear.haml` template, and you can probably deduce what the following does to the displayed page:
+
+    magic_controller
+      display('vestaments', {
+        route: '/vestaments/:colour',
+        title: function (params) { return "Splendid " + params.colour + " Robes!"; }
+      });
+
+*Faux and its documentation is still a work in progress. There's much more to come. Faux was conceived on August 19, 2010*
 
 [s]: http://github.com/quirkey/sammy "sammy_js"
 [sinatra]: http://www.sinatrarb.com/
