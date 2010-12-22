@@ -91,7 +91,7 @@ Now when the route `/#/vestaments/Blue` is invoked, the `.vestaments()` method w
 
 > When creating a new View, the options you pass are attached to the view as `this.options`, for future reference. There are several special options that, if passed, will be attached directly to the view: `model`, `collection`, `el`, `id`, `className`, and `tagName`. If the view defines an **initialize** function, it will be called when the view is first created. If you'd like to create a view that references an element *already* in the DOM, pass in the element as an option: `new View({el: existingElement})`
 
-Faux isn't done yet. If you neglect to write a `.render()` method for your view, Faux writes on for you. Faux's render method uses the Haml template to render the page contents, however it does so using the instance of the view as the default context. Your Haml template can include lines like this:
+Faux isn't done yet. If you neglect to write a `.render()` method for your view, Faux writes one for you. Faux's render method uses the Haml template to render the page contents, however it does so using the instance of the view as the default context. Your Haml template can include lines like this:
 
     %h2= this.options.type
     
@@ -99,7 +99,7 @@ If you want to write code that is called when the view is rendered, but still wa
 
 With a View class in place, you can add event handling and methods as you see fit to create the appropriate interaction in an unobtrusive way.
 
-**a little more about convention over configuration when views**
+**a little more about convention over configuration when declaring views**
       
 We know it's a question of taste, but if you like convention over configuration, you can also write:
 
