@@ -37,7 +37,7 @@ Since `my_controller` is an instance of `Backbone.Controller`, you can always ma
     magic_controller
       .display('spellbook');
 
-The `.display` method creates a method in your controller, `magic_controller.spellbook()`.By default, this method fetches a Haml template from ``prestidigitation.unspace.ca/pages/spellbook.haml` and uses that to render the HTML that the user sees into the current page inside the element identified by the jQuery selector `.base`. Also by default, Faux creates a route in your application, `prestidigitation.unspace.ca/#/spellbook`. This route is bound (using Backbone's controller architecture) to your method.
+The `.display` method creates a method in your controller, `magic_controller.spellbook()`.By default, this method fetches a Haml template from `/pages/spellbook.haml` and uses that to render the HTML that the user sees into the current page inside the element identified by the jQuery selector `.base`. Also by default, Faux creates a route in your application, `/#/spellbook`. This route is bound (using Backbone's controller architecture) to your method.
 
 Our favourite letter of the alphabet is [K][k], so you also can write things like:
 
@@ -87,7 +87,7 @@ The best way to do this in Faux is to start using some Backbone views. In Faux, 
         clazz: VestamentsView
       });
       
-Now when the route `/#/vestaments/Blue` is invoked, the `.vestaments()` method will create a new instance of `VestamentsView` and pass its initialization method `{ colour: 'Blue' }` as a parameter. You can write your own do whatever you like with that, of course. To quote the Backbone documentation:
+Now when the route `/#/vestaments/blue` is invoked, the `.vestaments()` method will create a new instance of `VestamentsView` and pass its initialization method `{ colour: 'blue' }` as a parameter. You can write your own do whatever you like with that, of course. To quote the Backbone documentation:
 
 > When creating a new View, the options you pass are attached to the view as `this.options`, for future reference. There are several special options that, if passed, will be attached directly to the view: `model`, `collection`, `el`, `id`, `className`, and `tagName`. If the view defines an **initialize** function, it will be called when the view is first created. If you'd like to create a view that references an element *already* in the DOM, pass in the element as an option: `new View({el: existingElement})`
 
@@ -111,7 +111,7 @@ We know it's a question of taste, but if you like convention over configuration,
         view: true
       });
       
-We're not big fans of global namespace clutter, so let's back up a bit:
+We're not big fans of global namespace clutter. If you feel the same way, start like this:
 
     window.ca || (window.ca = {});
     window.ca.unspace || (window.ca.unspace = {});
@@ -123,7 +123,7 @@ We're not big fans of global namespace clutter, so let's back up a bit:
       namespace: ca.unspace     // <--- lookie here
     });
     
-Now you can write:
+And now you can write:
 
     ca.unspace.VestamentsView = Backbone.View.extend({ ... });
 
@@ -151,9 +151,310 @@ And even:
         }
       });
       
-...more to come about AJAX queries and using models...
+**playing well with others**
+
+The examples so far give a flavour for declaring views and populating them with parameters extracted from the route. But these days, nobody uses applications that don't talk to a server (where by "nobody," we mean "[fewer than 10,000,000 people][api]").
+
+Let's start with the simplest case: performing a `GET`. Nothing could be easier:
+
+    magic_controller
+      .display('spells', {
+        gets: '/spells',
+        view: true
+      });
       
-*Faux and its documentation is still a work in progress. Faux was conceived on August 19, 2010 as "Roweis." A remark by Jeremy Ashkenas that we were creating a "Faux Server API" led to its new name.*
+Given a `gets` option (or `get`, if you prefer that), Faux builds a `.spells(...)` method that uses AJAX to performs  `GET` back to the server, passing it the route's parameters (if any). It expects the results in `JSON` format.
+
+By default, the result from the server is mixed in with your parameters was a parameter called `server_data`. So given a route of `/#/spells`, Faux will issue `GET /spells` to the server. Hand-waving over error handling for now, let's say the server responds with a JSON of:
+
+    [
+      { id: 1, name: 'invisibility' },
+      { id: 2, name: 'teleportation' }
+    ]
+    
+Faux will blend that in with the parameters. Since there weren't any, the result is now:
+
+    {
+      server_data: [
+        { id: 1, name: 'invisibility' },
+        { id: 2, name: 'teleportation' }
+      ]
+    }
+    
+You can get that directly within the template, or you can have it added to your `SpellsView` instance as `this.options`. That being said, you might not care for Faux's default choice of `server_data`. Here's how to change it:
+    
+    magic_controller
+      .display('spells', {
+        gets: { models: '/spells' },
+        view: true
+      });
+
+And now the options passed to your `SpellsView` instance are:
+
+    {
+      models: [
+        { id: 1, name: 'invisibility' },
+        { id: 2, name: 'teleportation' }
+      ]
+    }
+
+Configuring your parameter name(s) has interesting implications for integrating smoothly with Backbone's `Model` classes. before we discuss things in more detail, we should discuss parameterizing server requests. Let's say we write:
+    
+    magic_controller
+      .display('spells', {
+        gets: { models: '/spells' },
+        view: true
+      })
+      .display('spell', {
+        route: '/spells/:id',
+        gets: { model: '/spells/:id' },
+        view: true
+      });
+
+Now when we have a route of `/#/spells/42`, Faux issues `GET /spells/42` and the parameters coming back might be something like:
+
+    {
+      id: '42',
+      model: {
+        id: 42,
+        name: 'Bolt of Disruption'
+      }
+    }
+    
+Note that the original parameter is preserved and will be passed along to your `SpellView` initialization. In this example the server's route has the same structure as the client's faux route, but that needn't be the case:
+
+    magic_controller
+      .display('spell', {
+        route: '/cast_:id',
+        gets: { model: '/spells/search' },
+        view: true
+      });
+      
+In this case, a route of `/#/cast_42` will result in a request to the server of `GET /spells/search?id=42`.
+
+**methods step by step**
+
+If you're writing server and client together, you can make one suit the other. But you may need to munge things a bit to make everything work. Alas, this is our lot as programmers. We dream at night of building towers of pure logic, but we spend our days mating copper wire with knob-and-tube wiring or re-routing plumbing around a building's extension.
+
+Faux can't read your architect's mind, but it does provide a few tools for modifying the methods it creates. When Faux builds a method like `magic_controller.spells()`, it does so by composing a series of functions together into a pipeline. The initial parameters go in one end, and each function along the way can augment or even entirely change the parameters as it goes along.
+
+Radically simplified, Faux writes something like this:
+
+    function spell (params) {
+      spell_redirect(
+        spell_display(
+          spell_transform(
+            spell_fetch_data(
+              spell_get_params(
+                params
+              )
+            )
+          )
+        )
+      );
+    }
+
+I said it was radically simplified. Let's work at a higher level of abstraction. By default, there are five steps that are executed in order: `['get_params', 'fetch_data', 'transform', 'display', 'redirect']`.
+
+Faux writes a function for you for some of those steps. You can probably guess which ones for the examples given so far: When you write a `gets` option, Faux writes a `fetch_data` function for you. Unless you override Faux's partial handling by writing `partial: false` and don't declare a view, Faux writes a `display` function for you. Faux uses the `get_params` step for something we haven't explained yet called an *unobtrusive handler*, and uses the `redirect` step for something rare, an *action*. The `transform` step is always left undefined by Faux so that you can do whatever you want with it.
+
+We see you want a little more detail so here it is. You can write your own function and slot it in the options like this:
+
+    magic_controller
+      .display('coven', {
+        gets: { models: '/witches' },
+        transform: function (parameters) {
+          return {
+            model: {
+              models: parameters.models,
+              length: parameters.models.length
+            }
+          };
+        },
+        view: true
+      });
+
+In this case, we're transforming parameters of:
+
+    {
+      models: [ ... ]
+    }
+
+Into:
+
+    {
+      model: {
+        models: [ ... ],
+        length: 3
+      }
+    }
+
+There are some subtleties, of course. Sometimes you don't want to change the parameters, you just want to do something of your own. No problem, if your function doesn't return anything, Faux leaves the parameters untouched:
+
+    function (parameters) {
+      window.console && console.log(parameters);
+    }
+    
+Another is that Faux actually passes three parameters to each function. The first is the `parameters` that you often want to read or manipulate. The second is some `options` that Faux uses privately for its own purposes. Obviously, you mess with those at your peril. If you're curious, you can write:
+
+    function (parameters, options) {
+      window.console && console.log(options);
+    }
+
+The third parameter is quite important. Faux doesn't actually chain the functions together as shown above in our "ridiculously simple" example. If it did, it couldn't handle the case where a function returns nothing. Also, it couldn't handle asynchronous operations like fetching the template from the server or for that matter, fetching data from the server.
+
+Like many other Javascript code bases, Faux uses [Continuation-Passing Style][cps] (or "CPS") to chain the functions together. If you declare a function with one or two parameters, Faux assumes that your function is synchronous and calls your function then calls any subsequent functions immediately after your function returns.
+
+Therefore, if you write something like:
+
+    transform: function (parameters) {
+      jQuery.get('/somequery', parameters, function (data, textStatus, XMLHttpRequest) {
+        do_something(data);
+      }, 'json');
+    }
+    
+Your function will return immediately and `do_something(data)` will get called whenever jQuery receives a response from the server. If you want to perform an action before the method moves onto the next step, you need to write a function taking all three parameters, like this:
+
+    transform: function (parameters, options, callback) {
+      jQuery.get('/foo/bar', parameters, function (data, textStatus, XMLHttpRequest) {
+        parameters.fubar = data;
+        callback(parameters, options);
+      }, 'json');
+    }
+    
+Now Faux will assume that you are managing the chain of steps and will pass the future of the method chain as the `callback` parameter.
+
+**free advice**
+
+The preceding explanation about method steps is lengthy and the subtleties hardly seem like an advance over writing your own handlers from scratch. Most of the time, things are very simple. You usually write a `tranform` like this:
+
+    transform: function (params) {
+      jQuery.extend(params, {
+        // some more stuff
+      });
+    }
+    
+Very simple. And for that matter, you don't even have to write a `tranform`. Faux also supports *step advice*. You can write `before_` and `after_` steps that are mixed into the steps that Faux writes for you. So you can also write:
+
+    magic_controller
+      .display('coven', {
+        gets: { models: '/witches' },
+        before_display: function (parameters) {
+          return {
+            model: {
+              models: parameters.models,
+              length: parameters.models.length
+            }
+          };
+        },
+        view: true
+      });
+      
+The two techniques may seem indistinguishable, however the difference will become abundantly clear in the next section when we discuss sharing definitions with *scopes*. For now, file away the following cryptic rule: When you declare more than one `before_` or `after_` step, they are chained together just as the steps are chained together.
+
+**scopes: re-using definitions**
+
+Sometimes you want to make several different definitions share some commonality. Faux supports this with *scopes*. Scopes use `.begin` and `.end` methods to ape the way lexical scope works in languages like Javascript (jQuery uses the same technique with `.find` and `.end`). Here's an example:
+
+    magic_controller
+      .begin({
+        route: 'headgear',
+        partial: 'hats'
+      })
+        .display('hats', {
+          route: '',
+          gets: { models: '/hats' },
+          partial: 'plural'
+        })
+        .display('hat', {
+          route: ':id',
+          gets: { models: '/hats/:id' },
+          partial: 'singular'
+        })
+        .end();
+
+We establish a scope with `.begin(...)` and end it with `.end()`. In between, we call `.display(...)` twice, and each of those calls is inside our scope. Faux notes that your scope includes values for `route` and `partial`, and it acts as if you'd written:
+
+    magic_controller
+      .display('hats', {
+        route: '/headgear',
+        gets: { models: '/hats' },
+        partial: 'hats/plural'
+      })
+      .display('hat', {
+        route: 'headgear/:id',
+        gets: { models: '/hats/:id' },
+        partial: 'hats/singular'
+      });
+
+Faux knows that `route` and `partial` scopes should nest like paths nest, with `/` separators. Scopes are completely optional, of course, but used in conjunction with indenting as shown above, they help to make your code's appearance resemble its behaviour, which is an important consideration when [writing programs for people to read][read].
+
+Scopes also help you share code. You recall we said that Faux chains `before_` and `after_` step advice. Here's a contrived example:
+
+    magic_controller
+      .begin({
+        route: 'headgear',
+        after_fetch_data: function (params) {
+          if (params.models) {
+            var models = params.models;
+            delete params.models;
+            params.model = {
+              models: models,
+              length: models.length
+            };
+          }
+        },
+        partial: 'hats'
+      })
+        .display('hats', {
+          route: '',
+          gets: { model: '/hats' },
+          partial: 'plural'
+        })
+        .display('hat', {
+          route: ':id',
+          gets: { models: '/hats/:id' },
+          partial: 'singular'
+        })
+        // insert other calls to .display here
+        .end();
+
+This code automatically massages any `models` parameter into `model: { models: [...], length: n }` form for all of the methods defined in its scope. And because `after_` calls are chained, you can write:
+
+    magic_controller
+      .begin({
+        route: 'headgear',
+        after_fetch_data: function (params) {
+          if (params.models) {
+            var models = params.models;
+            delete params.models;
+            params.model = {
+              models: models,
+              length: models.length
+            };
+          }
+        },
+        partial: 'hats'
+      })
+        .display('hats', {
+          route: '',
+          gets: { model: '/hats' },
+          after_display: function (params) {
+            // this gets called after the scope's "after_display"
+          },
+          partial: 'plural'
+        })
+        .display('hat', {
+          route: ':id',
+          gets: { models: '/hats/:id' },
+          partial: 'singular'
+        })
+        // insert other calls to .display here
+        .end();
+
+*Faux and its documentation is still a work in progress: Future additions to this document may or may not include discussions about handling error codes, directly invoking methods, unobtrusive handlers, and some of the other macros such as `title`, `infers`, `redirects_to`, and `location`.*
+
+*Faux was conceived on August 19, 2010 as "Roweis." A remark by Jeremy Ashkenas that we were creating a "Faux Server API" led to its new name.*
 
 [s]: http://github.com/quirkey/sammy "sammy_js"
 [sinatra]: http://www.sinatrarb.com/
@@ -174,3 +475,7 @@ And even:
 [sprout]: http://www.sproutcore.com/
 [wicmajsp]: http://raganwald.posterous.com/why-i-call-myself-a-javascript-programmer "Why I Call Myself a Javascript Programmer"
 [k]: https://github.com/raganwald/JQuery-Combinators
+[api]: http://www.joelonsoftware.com/articles/APIWar.html "How Microsoft Lost the API War"
+[t]: https://github.com/raganwald/homoiconic/blob/master/2008-10-30/thrush.markdown
+[cps]: http://en.wikipedia.org/wiki/Continuation-passing_style "Continuation-passing style - Wikipedia, the free encyclopedia"
+[read]: http://weblog.raganwald.com/2007/04/writing-programs-for-people-to-read.html "Writing programs for people to read"
