@@ -21,23 +21,73 @@ Once we realized how much Javascript we'd be adding to support application logic
 
 Thus, Faux is optimized to act as a font end for a RESTful domain logic server.
 
-**basics**
+**setting up a faux application**
+
+For starters, you need a server that can deliver a page to host your application and the necessary Javascript files. If you're using Rails with Haml on the server, your application directory will look like this (non-essential directories elided):
+
+    rails_application_directory
+      app
+        ...
+      config
+        ...
+      db
+        ...
+      haml
+        index.haml
+      lib
+        ...
+      public
+        hamljs
+          ...
+        javascripts
+          underscore.js
+          backbone.js
+          haml-js.js
+          faux.js
+          application.js
+
+We've set things up so that our Rails app serves a single page for the route `/`, and we're using Haml to serve that page, so it's tenmplate is `index.haml`. You can serve HTNL directly by putting index.html in the `public` folder if you prefer, of course, and if you prefer another server, you can use any technique you like to serve a simple page for the `/` path.
+
+Here's what `index.haml` looks like:
+
+    !!!
+    %html{:lang => 'en'}
+      %head
+        %title My Application
+        %meta{:charset => 'utf-8'}
+    
+        %script{:src => '/javascripts/underscore.js',  :type => 'text/javascript' }
+        %script{:src => '/javascripts/backbone.js',    :type => 'text/javascript' }
+        %script{:src => '/javascripts/haml-js.js',     :type => 'text/javascript' }
+        %script{:src => '/javascripts/faux.js',        :type => 'text/javascript' }
+
+        %script{:src => '/javascripts/application.js', :type => 'text/javascript' }
+    
+      %body
+    
+        .container
+        
+All it does is load Faux, Faux's dependencies, and provide a container element. Faux will work with this element. You can decorate the page with headers, footers, and so forth. You can use multiple containers. You can do a lot of things, but for now let's stick with a simple, single container application.
+
+We'll put all of our Faux code in `application.js`.
 
 The concept behind Faux is extremely simple. When you include `faux.js` in your application, you get a Backbone controller class, `Faux.Controller`. You use an instance of `Faux.Controller` to build all of the faux-pages in your application. So you start by creating an instance:
 
     magic_controller = new Faux.Controller({ 
-      element_selector: '.base',
-      partial: 'pages',
+      element_selector: '.container',
+      partial: 'hamljs',
       partial_suffix: '.haml',
       title: 'My Application'
     });
     
-Since `my_controller` is an instance of `Backbone.Controller`, you can always manipulate it directly. As we note above, we are providing a utility, not an abstraction. Once you have your controller, you can start defining your faux-pages. Although you can render your HTML any way you like, at Unspace we use [Haml][haml] extensively and Faux makes it easy to use Haml in the client. Here's the simplest possible example:
+Since `my_controller` is an instance of `Backbone.Controller`, you can always manipulate it directly. That being said, a controller class by itself won't actually do anything. Here's how to make it work. 
+
+As we note above, we are providing a utility, not an abstraction. Once you have your controller, you can start defining your faux-pages. Although you can render your HTML any way you like, at Unspace we use [Haml][haml] extensively and Faux makes it easy to use Haml in the client. Here's the simplest possible example:
 
     magic_controller
       .display('spellbook');
 
-The `.display` method creates a method in your controller, `magic_controller.spellbook()`.By default, this method fetches a Haml template from `/pages/spellbook.haml` and uses that to render the HTML that the user sees into the current page inside the element identified by the jQuery selector `.base`. Also by default, Faux creates a route in your application, `/#/spellbook`. This route is bound (using Backbone's controller architecture) to your method.
+The `.display` method creates a method in your controller, `magic_controller.spellbook()`.By default, this method fetches a Haml template from `/hamljs/spellbook.haml` and uses that to render the HTML that the user sees into the current page inside the element identified by the jQuery selector `.base`. Also by default, Faux creates a route in your application, `/#/spellbook`. This route is bound (using Backbone's controller architecture) to your method.
 
 Our favourite letter of the alphabet is [K][k], so you also can write things like:
 
@@ -118,7 +168,7 @@ We're not big fans of global namespace clutter. If you feel the same way, start 
 
     magic_controller = new Faux.Controller({ 
       element_selector: '.base',
-      partial: 'pages',
+      partial: 'hamljs',
       partial_suffix: '.haml',
       namespace: ca.unspace     // <--- lookie here
     });
@@ -451,6 +501,7 @@ This code automatically massages any `models` parameter into `model: { models: [
         })
         // insert other calls to .display here
         .end();
+
 
 *Faux and its documentation is still a work in progress: Future additions to this document may or may not include discussions about handling error codes, directly invoking methods, unobtrusive handlers, and some of the other macros such as `title`, `infers`, `redirects_to`, and `location`.*
 
