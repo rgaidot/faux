@@ -180,7 +180,62 @@ Faux isn't done yet. If you neglect to write a `.render()` method for your view,
     
 If you want to write code that is called when the view is rendered, but still want to use Faux's templates, you can use a little aspect-oriented programming. Simply write your own `.before_render()` and/or `.after_render()` methods and Faux will call them before and after `.render()` is invoked.
 
-With a View class in place, you can add event handling and methods as you see fit to create the appropriate interaction in an unobtrusive way.
+With a View class in place, you can add event handling and methods as you see fit to create the appropriate interaction in an unobtrusive way. Here's a simple example extracted from a recent project. This view's model is a `Backbone.Collection` instance. The template (not shown) has a hidden form for adding a new spell.
+
+There are two events the view manages. When you click on an element with the CSS class `add_spell`, it shows the hidden form. When you click the form's submit button, it bundles all the form element's values into a hash. This becomes the attributes for a new spell added to the collection with the `.create(...)` method. When `.create(...)` successfully completes, you hide the form again.
+
+    var SpellsView = Backbone.View.extend({
+      
+      model: SpellsCollection, // not shown
+  
+      // Backbone's DOM event handling. We declare an event by name, an optional 
+      // jQuery selector, and a method to call.
+      events: {
+        'click .add_spell'   : 'show_spell_form',
+        'submit'             : 'submit_spell'
+      },
+  
+      initialize: function () {
+        var view = this;
+        this.model.bind('refresh', function () {
+          view.render();
+        });
+        // *TODO: Implement a feature to add one spell without re-rendering everything*
+        this.model.bind('add', function () {
+          view.render();
+        });
+      },
+  
+      show_spell_form: function () {
+        $('form', this.el).show('slow');
+      },
+      
+      submit_spell: function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var form = $(event.target).parents('form').andSelf().filter('form');
+        var attrs = _(form.serializeArray()).foldl(function (acc, obj) {
+          return (acc[obj.name] = obj.value) && acc) || acc;
+        }, {});
+        this.model.create(attrs, { success: function () {
+          $('form', this.el).hide('fast');
+        }});
+      }
+
+    });
+
+All of this is plain vanilla Backbone.js. Faux's contribution is to make it easy to everything up with a few lines of code like this:
+
+    magic_controller
+      .display('spells', {
+        gets: { model: '/spells' },
+        view: true
+      });
+
+Now your view gets a `.render()` method that invokes the `spells.haml` template and when you invoke the `/spells` faux route, you see your spells. Note that it's also possible to wire up the `SpellsCollection` to fetch its own contents, in which case you could just write:
+
+    magic_controller
+      .display('spells', { view: true });
 
 **a little more about convention over configuration when declaring views**
       
@@ -315,7 +370,7 @@ Note that the original parameter is preserved and will be passed along to your `
       
 In this case, a route of `/#/cast_42` will result in a request to the server of `GET /spells/search?id=42`.
 
-Pop quiz: What do you think will happen if you type:
+Pop quiz: What do you think will happen if you type the following?
 
     magic_controller
       .display('spell', {
@@ -324,7 +379,7 @@ Pop quiz: What do you think will happen if you type:
         view: true
       });
       
-That's right, Faux will issue two AJAX request to the server. When both have returned, your `parameters` will look like this:
+That's right, Faux will issue two AJAX request to the server. When both have returned, your `parameters` will look something like this:
 
     {
       id: '42',
