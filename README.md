@@ -67,11 +67,13 @@ Here's what `index.haml` looks like:
     
         .container
         
-All it does is load Faux, Faux's dependencies, and provide a container element. Faux will work with this element. You can decorate the page with headers, footers, and so forth. You can use multiple containers. You can do a lot of things, but for now let's stick with a simple, single container application.
+This loads Faux's dependencies, Faux itself, and provides a container element (`.container`) that Faux will work with. You can decorate the page with headers, footers, and so forth if you like. You can use multiple containers. You can do a lot of things, but for now let's stick with a simple, single container application.
 
-We'll put all of our Faux code in `application.js`.
+All of our own code that defines the application will go into `application.js`. Lets have a look at it.
 
-The concept behind Faux is extremely simple. When you include `faux.js` in your application, you get a Backbone controller class, `Faux.Controller`. You use an instance of `Faux.Controller` to build all of the faux-pages in your application. So you start by creating an instance:
+**application.js**
+
+The concept behind Faux is extremely simple. When you include `faux.js` in your application, you get a Backbone controller class, `Faux.Controller`. You use an instance of `Faux.Controller` to build all of the faux-pages in your application. So you start by creating an instance of the controller. This code goes in `application.js`:
 
     magic_controller = new Faux.Controller({ 
       element_selector: '.container',
@@ -80,14 +82,35 @@ The concept behind Faux is extremely simple. When you include `faux.js` in your 
       title: 'My Application'
     });
     
-Since `my_controller` is an instance of `Backbone.Controller`, you can always manipulate it directly. That being said, a controller class by itself won't actually do anything. Here's how to make it work. 
+We'll define our individual routes later. Before we do that, let's finish with the basic application initialization.
 
-As we note above, we are providing a utility, not an abstraction. Once you have your controller, you can start defining your faux-pages. Although you can render your HTML any way you like, at Unspace we use [Haml][haml] extensively and Faux makes it easy to use Haml in the client. Here's the simplest possible example:
+Once the page has fully loaded, we need to tell Backbone to start managing history so that the back button will work properly:
+
+    $(function() {
+      Backbone.history.start();
+    });
+    
+At this point the application will serve all of the faux urls we will be defining later. There's just one "problem:" If we load our index page without supplying a faux route, nothing will be loaded and the user will face a blank page. For example, if the user loads `/`, they get a blank page, whereas if they load `/#/`, they will be directed to whatever route we define for the faux url `#/`
+
+There are two fixes for this. One fix is to put some default HTML in the container. This is good for dealing with graceful degradation, but limits what we can put on the default page because we can't make use of Faux's support for backbone views and other goodies we'll read about below.
+
+So instead, we'll include the following snippet:
+
+    $(function() {
+      Backbone.history.start();
+      window.location.hash || magic_controller.home();
+    });
+    
+This extra line of code checks to see whether there's a hash to interpret as a faux url. If there isn't, it invokes the `.home()` method on our controller. Let's see how we define such methods.
+
+**defining faux routes and controller methods**
+    
+As we noted above, Faux provides a utility, not an abstraction. You can write any method you want for `magic_controller`. But let's define a simple method:
 
     magic_controller
-      .display('spellbook');
+      .display('home');
 
-The `.display` method creates a method in your controller, `magic_controller.spellbook()`.By default, this method fetches a Haml template from `/hamljs/spellbook.haml` and uses that to render the HTML that the user sees into the current page inside the element identified by the jQuery selector `.base`. Also by default, Faux creates a route in your application, `/#/spellbook`. This route is bound (using Backbone's controller architecture) to your method.
+The `.display` method creates a method in your controller, `magic_controller.home()`.By default, this method fetches a Haml template from `/hamljs/home.haml` and uses that to render the HTML that the user sees into the current page inside the element identified by the jQuery selector `.container`.
 
 Our favourite letter of the alphabet is [K][k], so you also can write things like:
 
@@ -95,12 +118,20 @@ Our favourite letter of the alphabet is [K][k], so you also can write things lik
       .display('spellbook')
       .display('robe');
 
-You can take control over the finer details by overriding Faux's defaults using a hash of options. Here are some examples:
+Also by default, Faux creates a faux route in your application that is extracted from the name of the method. Thus, calling `.display('home')` will create a method `.home()` and also create a faux route of `/home`. This route is bound (using Backbone's controller architecture) to your method. 
+
+et's be clear what we mean by "faux route." A real route is something like `http://prestidigitation.unspace.ca/`. When we say there is a faux route of `/home`, we mean that the *anchor* of the real route will be `/home`. So the complete location in the user's browser would be `http://prestidigitation.unspace.ca/#/home`. The complete location is always real route + `#` + faux route.
+
+You can take control over the finer details by overriding Faux's defaults using a hash of options. Here is an example:
 
     magic_controller
-      .display('spellbook', {
-        route: '/spells'
+      .display('home', {
+        route: '/'
       });
+
+Now the faux route `/` is bound to the `.home()` method instead of `/home`. And because of the initialization code we added to application.js, `.home()` will be triggered using the actual route `/` or the faux route `/` (locations `http://prestidigitation.unspace.ca/` or `http://prestidigitation.unspace.ca/#/`).
+
+**parameters**
 
 The route option is interesting. You can add some simple parameter interpolation:
 
