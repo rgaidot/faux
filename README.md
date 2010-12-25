@@ -105,7 +105,9 @@ This extra line of code checks to see whether there's a hash to interpret as a f
 
 **defining faux routes and controller methods**
     
-As we noted above, Faux provides a utility, not an abstraction. You can write any method you want for `magic_controller`. But let's define a simple method:
+As we noted above, Faux provides a utility, not an abstraction. You can write any methods you want for `magic_controller`, Faux simply provides a short-hand for the most common methods you'd write when constructing a route-centric application.
+
+Let's see how it works. We'll define the simplest possible method:
 
     magic_controller
       .display('home');
@@ -246,7 +248,7 @@ Let's start with the simplest case: performing a `GET`. Nothing could be easier:
       
 Given a `gets` option (or `get`, if you prefer that), Faux builds a `.spells(...)` method that uses AJAX to performs  `GET` back to the server, passing it the route's parameters (if any). It expects the results in `JSON` format.
 
-By default, the result from the server is mixed in with your parameters was a parameter called `server_data`. So given a route of `/#/spells`, Faux will issue `GET /spells` to the server. Hand-waving over error handling for now, let's say the server responds with a JSON of:
+You shouldn't have any trouble figuring out what happens if you type `posts: '/foo'`, `puts: '/bar'`, or `deletes: '/bash'`, but let's stick with `gets` for now: By default, the result from the server is mixed in with your parameters was a parameter called `server_data`. So given a route of `/#/spells`, Faux will issue `GET /spells` to the server. Hand-waving over error handling for now, let's say the server responds with a JSON of:
 
     [
       { id: 1, name: 'invisibility' },
@@ -312,6 +314,36 @@ Note that the original parameter is preserved and will be passed along to your `
       });
       
 In this case, a route of `/#/cast_42` will result in a request to the server of `GET /spells/search?id=42`.
+
+Pop quiz: What do you think will happen if you type:
+
+    magic_controller
+      .display('spell', {
+        route: '/spells/:id',
+        gets: { model: '/spells/:id', history: '/spells/:id/history' },
+        view: true
+      });
+      
+That's right, Faux will issue two AJAX request to the server. When both have returned, your `parameters` will look like this:
+
+    {
+      id: '42',
+      model: {
+        id: 42,
+        name: 'Bolt of Disruption'
+      },
+      history: [
+        {
+          cast: '20101225',
+          by: 'Theis'
+        },
+        {
+          cast: '20100614',
+          by: 'Merlin'
+        },
+        // ...
+      ]
+    }
 
 **methods step by step**
 
