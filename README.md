@@ -46,7 +46,7 @@ For starters, you need a server that can deliver a page to host your application
           faux.js
           application.js
 
-We've set things up so that our Rails app serves a single page for the route `/`, and we're using Haml to serve that page, so it's tenmplate is `index.haml`. You can serve HTNL directly by putting index.html in the `public` folder if you prefer, of course, and if you prefer another server, you can use any technique you like to serve a simple page for the `/` path.
+We've set things up so that our Rails app serves a single page for the route `/`, and we're using Haml to serve that page, so it's template is `index.haml`. You can serve HTNL directly by putting index.html in the `public` folder if you prefer, of course, and if you prefer another server, you can use any technique you like to serve a simple page for the `/` path.
 
 Here's what `index.haml` looks like:
 
@@ -120,7 +120,7 @@ Our favourite letter of the alphabet is [K][k], so you also can write things lik
 
 Also by default, Faux creates a faux route in your application that is extracted from the name of the method. Thus, calling `.display('home')` will create a method `.home()` and also create a faux route of `/home`. This route is bound (using Backbone's controller architecture) to your method. 
 
-et's be clear what we mean by "faux route." A real route is something like `http://prestidigitation.unspace.ca/`. When we say there is a faux route of `/home`, we mean that the *anchor* of the real route will be `/home`. So the complete location in the user's browser would be `http://prestidigitation.unspace.ca/#/home`. The complete location is always real route + `#` + faux route.
+Let's be clear what we mean by "faux route." A real route is something like `http://prestidigitation.unspace.ca/`. When we say there is a faux route of `/home`, we mean that the *anchor* of the real route will be `/home`. So the complete location in the user's browser would be `http://prestidigitation.unspace.ca/#/home`. The complete location is always real route + `#` + faux route.
 
 You can take control over the finer details by overriding Faux's defaults using a hash of options. Here is an example:
 
