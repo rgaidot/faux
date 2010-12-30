@@ -1,6 +1,10 @@
 Methods
 ===
 
+**steps**
+
+By default, there are five steps that are executed in order: `['get_params', 'fetch_data', 'transform', 'display', 'redirect']`.
+
 **more about writing your own steps**
 
 As mentioned in the [readme][r], you can write your own function and slot it in the options like this:
