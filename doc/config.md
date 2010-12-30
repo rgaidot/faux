@@ -31,7 +31,7 @@ The simplest example is this:
 
 That would display the `spells.haml` template, but if you hand't specified `location: true`, the location bar would remain unaltered. Now Faux resets the location bar so that bookmarking works properly.
 
-This allows you to use direct method invocation to perform faux redirects instead of fooling around with URLS. For example:
+This allows you to use direct method invocation to perform faux redirects instead of fooling around with URLs. For example:
 
     magic_controller
       .display('vestaments', {
@@ -40,7 +40,7 @@ This allows you to use direct method invocation to perform faux redirects instea
         location: true
       });
       
-Now you can call `magic_controller.vestaments{ colour: 'blue'}` wherever you like and Faux will arrange for the title and location to be updated appropriately.
+Now you can call `magic_controller.vestaments({ colour: 'blue'})` wherever you like and Faux will arrange for the title and location to be updated appropriately.
 
 You can also manage the location more explicitly:
 

@@ -408,7 +408,7 @@ Into:
 
 **free advice**
 
-You usually write a `tranform` like this:
+You usually write a `transform` like this:
 
     transform: function (params) {
       jQuery.extend(params, {
