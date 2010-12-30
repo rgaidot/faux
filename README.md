@@ -21,6 +21,9 @@ Once we realized how much Javascript we'd be adding to support application logic
 
 Thus, Faux is optimized to act as a font end for a RESTful domain logic server.
 
+Basic Faux
+---
+
 **setting up a faux application**
 
 For starters, you need a server that can deliver a page to host your application and the necessary Javascript files. If you're using Rails with Haml on the server, your application directory will look like this (non-essential directories elided):
@@ -559,3 +562,4 @@ This code automatically massages any `models` parameter into `model: { models: [
 [cps]: http://en.wikipedia.org/wiki/Continuation-passing_style "Continuation-passing style - Wikipedia, the free encyclopedia"
 [read]: http://weblog.raganwald.com/2007/04/writing-programs-for-people-to-read.html "Writing programs for people to read"
 [v]: ./doc/more_about_views.md#readme
+[m]: ./doc/methods.md#readme
