@@ -9,9 +9,9 @@ This approach is not a one-size-fits-all for writing SPI applications.
 
 * Some applications are extremely simple and don't need the support for events and interaction that views provide. A framework like [Sammy][s] might be a good choice.
 * Some applications are small but need some support for interaction. Using Backbone directly might be the best choice, as this [example][todo] shows.
-* Many client-side applications ought to feature rich and varied interaction that doesn't revolve around routes. You might want to roll your own framework on top of [Backbone][b] or jump right into a more sophisticated tool like [Sproutcore][sprout].
+* Many client-side applications ought to feature rich and varied interaction that doesn't revolve around routes. You might want to roll your own code on top of [Backbone][b] or jump right into a more sophisticated tool like [Sproutcore][sprout].
 
-Our bet is that Faux is a good choice for broad but shallow applications, applications with lots of functions that break neatly down into "pages," but fairly straightforward interactions on each page. For these applications, you may want to provide users with the benefits of a web interface they already understand: bookmarkable, back-buttonable locations. We're also betting that  a declarative syntax for defining the skeleton of your application is easier to maintain than a collection of classes wired together in an ad hoc fashion, so much so that if Faux isn't for you, you'll probably end up rolling something similar for yourself that is closely tailored to your needs.
+Our bet is that Faux is a good choice for applications with lots of functions that break neatly down into "pages," but fairly straightforward interactions on each page. For these applications, you may want to provide users with the benefits of a web interface they already understand: bookmarkable, back-buttonable locations. We're also betting that  a declarative syntax for defining the skeleton of your application is easier to maintain than a collection of classes wired together in an ad hoc fashion, so much so that if Faux isn't for you, you'll probably end up rolling something similar for yourself that is closely tailored to your needs.
 
 **our motivation**
 
@@ -160,7 +160,7 @@ And you can probably deduce what the following does to the displayed page:
 
 From the basics above, you can see how Faux provides a simple DSL for building a backbone controller with methods that render views in the form of Haml templates. If you stop right there, you have the simplest possible [(~M)VC][mvp] architecture. But it won't be long before you want to add a little interaction in the client.
 
-The best way to do this in Faux is to start using some Backbone views. In Faux, you can associate a view with a faux page. Here's one way to do it:
+The best way to do this in Faux is to start using some Backbone views. In Faux, you can associate a view with a faux page. Here's the explicit way to do it:
 
     VestamentsView = Backbone.View.extend({ });
 
@@ -170,7 +170,7 @@ The best way to do this in Faux is to start using some Backbone views. In Faux, 
         clazz: VestamentsView
       });
       
-Now when the route `/#/vestaments/blue` is invoked, the `.vestaments()` method will create a new instance of `VestamentsView` and pass its initialization method `{ colour: 'blue' }` as a parameter. You can write your own do whatever you like with that, of course. To quote the Backbone documentation:
+Now when the route `/#/vestaments/blue` is invoked, the `.vestaments()` method will create a new instance of `VestamentsView` and pass its initialization method `{ colour: 'blue' }` as a parameter. You can write your own `.intitialize()` method to do whatever you like with that, of course. To quote the Backbone documentation:
 
 > When creating a new View, the options you pass are attached to the view as `this.options`, for future reference. There are several special options that, if passed, will be attached directly to the view: `model`, `collection`, `el`, `id`, `className`, and `tagName`. If the view defines an **initialize** function, it will be called when the view is first created. If you'd like to create a view that references an element *already* in the DOM, pass in the element as an option: `new View({el: existingElement})`
 
@@ -178,9 +178,11 @@ Faux isn't done yet. If you neglect to write a `.render()` method for your view,
 
     %h2= this.options.type
     
-If you want to write code that is called when the view is rendered, but still want to use Faux's templates, you can use a little aspect-oriented programming. Simply write your own `.before_render()` and/or `.after_render()` methods and Faux will call them before and after `.render()` is invoked.
+If you want to write code that is called when the view is rendered, but still want to use Faux's templates, you can use a little aspect-oriented programming. Simply write your own `.before_render()` and/or `.after_render()` methods and Faux will call them before and after `.render()` is invoked. With a View class in place, you can add event handling and methods as you see fit to create the appropriate interaction in an unobtrusive way.
 
-With a View class in place, you can add event handling and methods as you see fit to create the appropriate interaction in an unobtrusive way. Here's a simple example extracted from a recent project. This view's model is a `Backbone.Collection` instance. The template (not shown) has a hidden form for adding a new spell.
+**an example view class**
+
+Here's a simple example extracted from a recent project. This view's model is a `Backbone.Collection` instance. The template (not shown) has a hidden form for adding a new spell.
 
 There are two events the view manages. When you click on an element with the CSS class `add_spell`, it shows the hidden form. When you click the form's submit button, it bundles all the form element's values into a hash. This becomes the attributes for a new spell added to the collection with the `.create(...)` method. When `.create(...)` successfully completes, you hide the form again.
 
@@ -231,73 +233,12 @@ All of this is plain vanilla Backbone.js. Faux's contribution is to make it easy
         gets: { model: '/spells' }
       });
 
-Now your view gets a `.render()` method that invokes the `spells.haml` template and when you invoke the `/spells` faux route, you see your spells. Note that it's also possible to wire up the `SpellsCollection` to fetch its own contents, in which case you could just write:
+Now the view gets a `.render()` method that invokes the `spells.haml` template and when you invoke the `/spells` faux route, you see your spells. Note that it's also possible to wire up the `SpellsCollection` to fetch its own contents, in which case you could just write:
 
     magic_controller
       .display('spells');
 
-**a little more about convention over configuration when declaring views**
-      
-We know it's a question of taste, but if you like convention over configuration, you can also write:
-
-    VestamentsView = Backbone.View.extend({ ... });
-
-    magic_controller
-      .display('vestaments', {
-        route: '/vestaments/:colour'
-      });
-      
-If you don't specify a `clazz` but Faux can find a view class that is named after your method, Faux will use it. That works for methods that look like they're singular or plural:
-
-    ThaumaturgyView = Backbone.View.extend({ ... });
-
-    magic_controller
-      .display('thaumaturgy', { ... ); // infers clazz: ThaumaturgyView
-
-There's another special case for method names that look like plurals:
-
-    SpellCollectionView = Backbone.View.extend({ ... });
-    
-    magic_controller
-      .display('spells', { ... }); // infers clazz: SpellCollectionView if it can't find SpellsView first
-      
-If you don't want a view class, you can always insist:
-
-    magic_controller
-      .display('something', {
-        clazz: false
-      });
-
-We're not big fans of global namespace clutter. If you feel the same way, start like this:
-
-    window.ca || (window.ca = {});
-    window.ca.unspace || (window.ca.unspace = {});
-
-    magic_controller = new Faux.Controller({ 
-      element_selector: '.base',
-      partial: 'hamljs',
-      partial_suffix: '.haml',
-      namespace: ca.unspace     // <--- lookie here
-    });
-    
-And now you can write:
-
-    ca.unspace.VestamentsView = Backbone.View.extend({ ... });
-
-    magic_controller
-      .display('vestaments', {
-        route: '/vestaments/:colour'
-      });
-  
-Some folks are big fans of point-free syntax and anonymous functions. Faux digs your groove, too:
-
-    magic_controller
-      .display('vestaments', {
-        route: '/vestaments/:colour',
-        clazz: {
-          // equivalent to Backbone.View.extend({ ... })
-        }
-      });
+*You can read more about Faux and views in [More About Views][v].*
       
 **playing well with others**
 
@@ -460,44 +401,11 @@ Into:
       }
     }
 
-There are some subtleties, of course. Sometimes you don't want to change the parameters, you just want to do something of your own. No problem, if your function doesn't return anything, Faux leaves the parameters untouched:
-
-    function (parameters) {
-      window.console && console.log(parameters);
-    }
-    
-Another is that Faux actually passes three parameters to each function. The first is the `parameters` that you often want to read or manipulate. The second is some `options` that Faux uses privately for its own purposes. Obviously, you mess with those at your peril. If you're curious, you can write:
-
-    function (parameters, options) {
-      window.console && console.log(options);
-    }
-
-The third parameter is quite important. Faux doesn't actually chain the functions together as shown above in our "ridiculously simple" example. If it did, it couldn't handle the case where a function returns nothing. Also, it couldn't handle asynchronous operations like fetching the template from the server or for that matter, fetching data from the server.
-
-Like many other Javascript code bases, Faux uses [Continuation-Passing Style][cps] (or "CPS") to chain the functions together. If you declare a function with one or two parameters, Faux assumes that your function is synchronous and calls your function then calls any subsequent functions immediately after your function returns.
-
-Therefore, if you write something like:
-
-    transform: function (parameters) {
-      jQuery.get('/somequery', parameters, function (data, textStatus, XMLHttpRequest) {
-        do_something(data);
-      }, 'json');
-    }
-    
-Your function will return immediately and `do_something(data)` will get called whenever jQuery receives a response from the server. If you want to perform an action before the method moves onto the next step, you need to write a function taking all three parameters, like this:
-
-    transform: function (parameters, options, callback) {
-      jQuery.get('/foo/bar', parameters, function (data, textStatus, XMLHttpRequest) {
-        parameters.fubar = data;
-        callback(parameters, options);
-      }, 'json');
-    }
-    
-Now Faux will assume that you are managing the chain of steps and will pass the future of the method chain as the `callback` parameter.
+*You can read more about writing your own steps in [Methods][m].*
 
 **free advice**
 
-The preceding explanation about method steps is lengthy and the subtleties hardly seem like an advance over writing your own handlers from scratch. Most of the time, things are very simple. You usually write a `tranform` like this:
+You usually write a `tranform` like this:
 
     transform: function (params) {
       jQuery.extend(params, {
@@ -650,3 +558,4 @@ This code automatically massages any `models` parameter into `model: { models: [
 [t]: https://github.com/raganwald/homoiconic/blob/master/2008-10-30/thrush.markdown
 [cps]: http://en.wikipedia.org/wiki/Continuation-passing_style "Continuation-passing style - Wikipedia, the free encyclopedia"
 [read]: http://weblog.raganwald.com/2007/04/writing-programs-for-people-to-read.html "Writing programs for people to read"
+[v]: ./doc/more_about_views.md#readme
