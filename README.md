@@ -228,14 +228,13 @@ All of this is plain vanilla Backbone.js. Faux's contribution is to make it easy
 
     magic_controller
       .display('spells', {
-        gets: { model: '/spells' },
-        view: true
+        gets: { model: '/spells' }
       });
 
 Now your view gets a `.render()` method that invokes the `spells.haml` template and when you invoke the `/spells` faux route, you see your spells. Note that it's also possible to wire up the `SpellsCollection` to fetch its own contents, in which case you could just write:
 
     magic_controller
-      .display('spells', { view: true });
+      .display('spells');
 
 **a little more about convention over configuration when declaring views**
       
@@ -245,10 +244,30 @@ We know it's a question of taste, but if you like convention over configuration,
 
     magic_controller
       .display('vestaments', {
-        route: '/vestaments/:colour',
-        view: true
+        route: '/vestaments/:colour'
       });
       
+If you don't specify a `clazz` but Faux can find a view class that is named after your method, Faux will use it. That works for methods that look like they're singular or plural:
+
+    ThaumaturgyView = Backbone.View.extend({ ... });
+
+    magic_controller
+      .display('thaumaturgy', { ... ); // infers clazz: ThaumaturgyView
+
+There's another special case for method names that look like plurals:
+
+    SpellCollectionView = Backbone.View.extend({ ... });
+    
+    magic_controller
+      .display('spells', { ... }); // infers clazz: SpellCollectionView if it can't find SpellsView first
+      
+If you don't want a view class, you can always insist:
+
+    magic_controller
+      .display('something', {
+        clazz: false
+      });
+
 We're not big fans of global namespace clutter. If you feel the same way, start like this:
 
     window.ca || (window.ca = {});
@@ -267,19 +286,10 @@ And now you can write:
 
     magic_controller
       .display('vestaments', {
-        route: '/vestaments/:colour',
-        view: true
+        route: '/vestaments/:colour'
       });
   
 Some folks are big fans of point-free syntax and anonymous functions. Faux digs your groove, too:
-
-    magic_controller
-      .display('vestaments', {
-        route: '/vestaments/:colour',
-        clazz: SomeViewClass.extend({ ... })
-      });
-      
-And even:
 
     magic_controller
       .display('vestaments', {
@@ -297,8 +307,7 @@ Let's start with the simplest case: performing a `GET`. Nothing could be easier:
 
     magic_controller
       .display('spells', {
-        gets: '/spells',
-        view: true
+        gets: '/spells'
       });
       
 Given a `gets` option (or `get`, if you prefer that), Faux builds a `.spells(...)` method that uses AJAX to performs  `GET` back to the server, passing it the route's parameters (if any). It expects the results in `JSON` format.
@@ -323,8 +332,7 @@ You can get that directly within the template, or you can have it added to your 
     
     magic_controller
       .display('spells', {
-        gets: { models: '/spells' },
-        view: true
+        gets: { models: '/spells' }
       });
 
 And now the options passed to your `SpellsView` instance are:
@@ -340,13 +348,11 @@ Configuring your parameter name(s) has interesting implications for integrating 
     
     magic_controller
       .display('spells', {
-        gets: { models: '/spells' },
-        view: true
+        gets: { models: '/spells' }
       })
       .display('spell', {
         route: '/spells/:id',
-        gets: { model: '/spells/:id' },
-        view: true
+        gets: { model: '/spells/:id' }
       });
 
 Now when we have a route of `/#/spells/42`, Faux issues `GET /spells/42` and the parameters coming back might be something like:
@@ -364,8 +370,7 @@ Note that the original parameter is preserved and will be passed along to your `
     magic_controller
       .display('spell', {
         route: '/cast_:id',
-        gets: { model: '/spells/search' },
-        view: true
+        gets: { model: '/spells/search' }
       });
       
 In this case, a route of `/#/cast_42` will result in a request to the server of `GET /spells/search?id=42`.
@@ -375,8 +380,7 @@ Pop quiz: What do you think will happen if you type the following?
     magic_controller
       .display('spell', {
         route: '/spells/:id',
-        gets: { model: '/spells/:id', history: '/spells/:id/history' },
-        view: true
+        gets: { model: '/spells/:id', history: '/spells/:id/history' }
       });
       
 That's right, Faux will issue two AJAX request to the server. When both have returned, your `parameters` will look something like this:
@@ -438,8 +442,7 @@ We see you want a little more detail so here it is. You can write your own funct
               length: parameters.models.length
             }
           };
-        },
-        view: true
+        }
       });
 
 In this case, we're transforming parameters of:
@@ -514,8 +517,7 @@ Very simple. And for that matter, you don't even have to write a `tranform`. Fau
               length: parameters.models.length
             }
           };
-        },
-        view: true
+        }
       });
       
 The two techniques may seem indistinguishable, however the difference will become abundantly clear in the next section when we discuss sharing definitions with *scopes*. For now, file away the following cryptic rule: When you declare more than one `before_` or `after_` step, they are chained together just as the steps are chained together.
